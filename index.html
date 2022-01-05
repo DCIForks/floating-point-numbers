@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rounding Errors</title>
+
+    <style>
+      :root {
+        --numberSize: 1rem;
+      }
+
+      iframe {
+        display: block;
+        margin: 0 auto;
+      }
+
+      pre {
+        background-color: #eee;
+        width: fit-content;
+        padding: 0.5em 1em;
+        border: inset 1px grey;
+        font-size: var(--numberSize);
+      }
+
+      code {
+        background-color: #eee;
+        padding: 0.125em 0.25em 0.125em 0;
+        margin: -0.125em -0.25em 0.125em 0;
+        font-size: var(--numberSize);
+      }
+
+      #form {
+        background-color: #eee;
+        width: fit-content;
+        padding: 0.5em 1em 0;
+        border: inset 1px grey;
+      }
+
+      #form input[type="number"] {
+        display: inline-block;
+        width: 3em;
+        text-align: right;
+        padding: 0;
+      }
+
+      #form pre {
+        padding: 0;
+        border: none;
+      }
+
+      ul.pre li {
+        font-family: monospace;
+        white-space: pre;
+      }
+
+      .note {
+        color: #00f;
+        background-color: #eef;
+        padding: 0 1em;
+        border: inset 1px #88f;
+      }
+
+      .implicit {
+        color: #888;
+        font-style: italic;
+      }
+      .implicit::before {
+        content: "("
+      }
+      .implicit::after {
+        content: ")"
+      }
+
+      .sign {
+        color: blue;
+      }
+      .exponent {
+        color: green
+      }
+      .significand {
+        color: red
+      }
+      .no-break {
+        white-space: pre;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Rounding Errors with Floating Point Numbers</h1>
+
+    <p>Why does this happen in JavaScript?</p>
+    <pre>
+$ node
+> 1 / 300000 * 3 * 100000
+0.9999999999999999</pre
+    >
+
+    <p>Why is the output of this calculation not exactly 1?</p>
+
+    <!-- <p>And yet, if you change the calculation slightly, you do get exactly 1:</p>
+   <pre>
+$ node
+> 1 / 300000 * (3 * 100000)
+1</pre> -->
+    <p style="margin-bottom: 0">
+      This lack of accuracy is called a <em>rounding error</em>. Rounding errors like this:
+    </p>
+    <ul style="margin-top: 0">
+      <li>
+        Don't happen only with the numbers <code>3</code> and
+        <code>100000</code>
+      </li>
+      <li>Don't always give an answer smaller than expected</li>
+      <li>Don't happen with all numbers</li>
+      <li>Can grow larger with each additional mathematical operation.</li>
+    </ul>
+    <p>You can test some other numbers here:</p>
+
+    <div id="form">
+      <label for="number">
+        <span>Test with:</span>
+        <input id="number" type="number" value="3" min="2" max="32" />
+        <select id="power">
+          <option value="100000">100000</option>
+          <option value="1000000" selected>1000000</option>
+        </select>
+      </label>
+      <pre id="calculation"></pre
+      >
+      <label for="cycle">
+        <input id="cycle" type="checkbox" value="cycle" />
+        <span>Cycle through the examples</span>
+      </label>
+    </div>
+
+    <p>
+      Note that when you test with numbers like <code>2</code>, <code>4</code>, <code>8</code>, <code>16</code> and <code>32</code>, you do not see any rounding errors. This is not a coincidence. Can you tell why?
+    </p>
+
+    <p>
+      Read on to learn about how JavaScript deals with numbers with a decimal point, and why it has to sacrifice accuracy for speed and magnitude.
+    </p>
+    
+    <p>
+      If you want to skip the explanations and jump to a demonstration. click <a href="#demo">here</a><div class=""></div></p>
+    
+    <hr />
+
+    <h2>Writing Numbers</h2>
+
+    <p>
+      Numbers seem such simple ordinary things, but it has taken a long time for them to become standardized the way they are today. The ancient Babylonians wrote numbers in groups of 60, and we still have 60 minutes in an hour, 60 seconds in a minute, and 360° in a circle.
+    </p>
+
+    <p>
+      The Romans did their calculations with stones. The word for "stone" in Latin is "calculus". They arranged their stones on lines on a board, or on an abacus. They had
+      <a href="https://www.youtube.com/channel/UC7E8N5Z0FTf0aMIkMDHKj9Q"
+        >a technique for doing arithmetic</a
+      >
+      which made it very fast to calculate, if you think in groups of ones,
+      fives, tens, fifties, and so on, and if you think of four as five-minus-one. Which explains why Roman numerals have the form that they do.
+    </p>
+
+    <p>
+      Computers (or electronic calculating machines) are less than 80 years old,
+      and many different systems have been used to get computers to "think" in numbers. The current standard is a compromise that works quite well in most cases.
+    </p>
+
+    <h3>How Modern Humans and Computers Treat Integers</h3>
+    <p>
+      Integers, or whole numbers, are numbers with no decimal or fractional part, like <code>0</code>, <code>1</code>, <code>2</code>,  <code>-65535</code> or <code>2147483647</code>.
+    </p>
+
+    <p>
+      Modern humans use a decimal system, or <em>base 10</em>. We use ten <em>digits</em> —the numbers <code>0</code> to <code>9</code>— arranged in columns. (In Latin, the word "digitus" means "finger", and we have ten of those.)
+    </p>
+
+    <p>
+      If we want to write a number more than <code>9</code>, we create a new column to the left for multiples of ten. If we want to write a number greater than <code>99</code>, we create a new column for multiples of one hundred, and so on. The number <code>1023</code> means, reading from right to left:
+    </p>
+    <ul class="pre">
+      <li>  3 groups of   one      (10°)</li>
+      <li>+ 2 groups of   ten      (10¹)</li>
+      <li>+ 0 groups of a hundred  (10²)</li>
+      <li>+ 1 group  of a thousand (10³)</li>
+    </ul>
+    <p>
+      We write numbers in this order, and we perform additions and substractions from right to left, because we inherited our number system from the Arabs between the 12th and the 15th century, and Arabic is written from right to left. In the past, people often said things like "four and twenty".
+    </p>
+
+    <p>
+      If you add <code>1</code> to <code>1023</code>, it looks like this:
+      <code>1024</code>. But if you add <code>1</code> to <code>999</code>, it looks like this: <code>1000</code>. We learn about this in primary school, and then it seems so obvious, that we forget how neat the system is, and how many centuries it took to develop it.
+    </p>
+
+    <p>
+      Computers use a binary system, or <em>base 2</em>, to store numbers. Each "<em>b</em>inary digi<em>it</em>" or <em>bit</em> can have either the value <code>0</code> or <code>1</code>. The number <code>1023</code> looks like this in binary: <code>1111111111</code>. Reading from right to left, this means:
+    </p>
+
+    <ul class="pre">
+      <li>  1 × one                          = 2^0 =    1</li>
+      <li>+ 1 × two                          = 2^1 =    2</li>
+      <li>+ 1 × four                         = 2^2 =    4</li>
+      <li>+ 1 × eight                        = 2^3 =    8</li>
+      <li>+ 1 × sixteen                      = 2^4 =   16</li>
+      <li>+ 1 × thirty-two                   = 2^5 =   32</li>
+      <li>+ 1 × sixty-four                   = 2^6 =   64</li>
+      <li>+ 1 × one-hundred-and-twenty-eight = 2^7 =  128</li>
+      <li>+ 1 × two-hundred-and-fifty-six    = 2^8 =  256</li>
+      <li>+ 1 × five-hundred-and-twelve      = 2^9 =  512</li>
+      <li style="list-style-type: none">                                           ————</li>
+      <li style="list-style-type: none">                                         = 1023</li>
+    </ul>
+
+    <p>
+      We humans don't have names for the powers of <code>2</code> that are as simple as "tens", "hundreds" and "thousands"  so this system may feel rather strange. But it works, and just as well as the decimal system.
+    </p>
+
+    <p>
+      You can see how simple the mechanics of a binary adding machine are in the video below.
+    </p>
+
+    <iframe width="448" height="252" src="https://www.youtube.com/embed/GcDshWmhF4A" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+    <p>
+      If you add <code>1</code> to the binary number <code>1111111111</code>, it looks like this: <code>10000000000</code>. A one followed by ten zeros. Remember this. You'll be seeing it again soon.
+    </p>
+
+    <h3>How Big an Integer Can Be</h3>
+    <p>
+      Computers work most efficiently when they are working with bits arranged into groups that are integer powers of <code>2</code>. Modern smartphones and personal computers have chips which work with 64 bits (<code>2^6</code>).
+    </p>
+
+    <p>
+      To represent integers, one bit is used to indicate whether the number is positive (the first bit will be <code>0</code> or negative (the first bit will be <code>1</code>). This leaves 63 bits to define the number. In other words, with 64 bits, a computer can represent integers from <code>+9223372036854775999</code> through zero to <code>-9223372036854775999</code>. Note that zero is a special case. For technical reasons, it has two representations: a <code>1</code> followed by 63 <code>0</code>s (in other words, <code>-0</code>) or <code>0</code> followed by another 63 <code>0</code>s (or <code>+0</code>).
+    </p>
+
+    <p>
+      That's a big number, <code>10^63</code>: 9,223,372,036,854,775,999. Almost 10 billion billions. Bigger than the value of the entire production of goods by everyone in for the whole world in one year, measured in US <em>cents</em>. More than twice the distance from here to the closest star, Proxima Centauri, measured in <em>centimetres</em>.
+    </p>
+    
+    <p>Numbers outside this range will be treated as <code>±Infinity</code>. You'll see how shortly.</p>
+    
+
+    <h2>Numbers With a Decimal Fraction</h2>
+
+    <p>A big number, yes, but this integer system doesn't have any way to express fractions of one, like one half, one tenth or <code>1/128</code>. Modern humans often do this using a <em>decimal point</em>. We write a number like <code>π</code> as <code>3.1415926...</code>, where the decimal point says "the following columns are tenths, hundreds, thousands and so on".</p>
+   
+    <ul class="pre">
+      <li>3 groups of one                 (10^ 0)</li>
+      <li style="list-style-type: none">(point)</li>
+      <li>1 group  of tenths              (10^-1)</li>
+      <li>4 groups of hundredths          (10^-2)</li>
+      <li>1 group  of thousandths         (10^-3)</li>
+      <li>5 groups of ten-thousandths     (10^-4)</li>
+      <li>9 groups of hundred-thousandths (10^-5)</li>
+      <li>2 groups of millionths          (10^-6)</li>
+      <li>6 groups of ten-millionths      (10^-7)</li>
+    </ul> 
+    
+    <p>
+      In everyday usage, we can put a decimal point after any number of digits representing a whole number: a body temperature of 37.2° C, a mountain height of 8,848.86 m, a speed of 299,792.458 km/s, a chance of 0.00343 of living to be 100, if you live in Japan. (Note that we always put at least one "whole" number before the decimal point, even if it has to be zero.)
+    </p>
+
+    <h3>Scientific Notation</h3>
+    <p>
+      You may have learned <em>scientific notation</em>. This is a way of writing numbers with always exactly one non-zero digit before the decimal point, multiplied by a power of ten. Here are some examples of this technique:
+    </p>
+    
+    <ul>
+      <li>2.997 924 58 × 10^8  m/s (the speed of light)</li>
+      <li>3.844 × 10^5 km (average distance to the Moon)</li>
+      <li>3.27 × 10^-22 g (weight of a single atom of gold)</li>
+    </ul>
+
+    <h3>The Naming of the Parts</h3>
+    <p>
+      Let's give some names to the different parts of a number in scientific notation. For the weight of a gold atom, <code>3.27</code> is known as the <em>significand</em>, because it contains the significant numbers. The number <code>10</code> is known as the <em>base</em>, and the value <code>-22</code> is known as the <em>ex<strong>po</strong>nent</em>. In other words, it is the <strong>po</strong>wer to which the base is raised.
+    </p>
+    <p>
+      When we move to a different power of 10, we can say that we are working in a different <em>order of magnitude</em>. A kilometre is 6 orders of magnitude greater than a millimetre. The distance to the Moon (3.844 × 10^5 km) is 3 orders of magnitude less than the distance to the Sun (1.495 978 70 × 10^8 km).
+    </p>
+    
+    <div class="note">
+      <p>
+        Note: a negative power of 10 signifies a fraction.
+        
+        <ul>
+          <li><code>10^3</code> means <code>1000</code>, or <code>10 × 10 × 10</code></li>
+          <li><code>10^-3</code> means <code>0.001</code>, or <code>1/10 × 1/10 × 1/10</code> (<code>1/1000</code>)</li>
+        </ul>
+      
+      <p>
+        To put it another way:
+      </p>
+        <ul>
+          <li>
+            A positive power of 10 is the number of zeros after an initial <code>1</code>: <code>10^6</code> is <code>1,000,000</code>, or one million.
+          </li>
+        <li>
+          A negative power of 10 leads to that number of zeros before the <code>1</code> (including the  zero before the decimal point): <code>10^-6</code> is <code>0.000 001</code>, or one millionth.
+        </li>
+      </ul>
+    </div>    
+
+    <h3>Floating Point Numbers</h3>
+    <p>
+      Computers use a technique similar to scientific notation, but using the binary number system. To explain this, I'll use a 16-bit encoding system, because this will require me to write fewer <code>1</code>s and <code>0</code>s, and because that the compromises required by the system will be most obvious.
+    </p>
+    
+    <p>
+      First, the minimum and maximum <em>integers</em> that can be expressed with just 16 bits are <code>-32767</code> and <code>+32767</code>. That's a total of 65535 numbers, (including zero).To be clear: the first of the sixteen bits is used for the sign (<code>0</code> for positive, <code>1</code> for negative), and then there are 15 bits to represent the integers from <code>000000000000000</code> to <code>111111111111111</code>, or zero to 32767.
+    </p>
+    
+    
+    <p>
+      The <a href="https://en.wikipedia.org/wiki/Half-precision_floating-point_format">current standard for 16-bit floating point numbers</a> uses:
+    </p>
+
+    <ul>
+      <li>1 bit for the sign (+ or -)</li>
+      <li>5 bits for the <em>exponent</em> (the number that gives the <em>order of magnitude</em>).</li>
+      <li>10 bits for the <em>significand</em> (the number that gives a specific value)</li>
+      <li>A <em>base</em> of 2 (which is implicit, so it requires no bits.)</li>
+    </ul>
+    
+    <h4>The Range of the Significand</h4>
+    <p>
+      How many different values can the significand take? With 10 bits, it can take <code>2^10</code> <em>different</em> values, or 1024. That is, all the values from <code>0</code> to <code>1023</code>.
+    </p>
+
+    <div class="note">
+      <p>Notice that: the maximum value is exactly 1023, and <strong>not</strong> exactly 1000.</p>
+    </div>
+
+    
+    <p>What do these 1024 values actually represent? </p>
+
+    <p>
+      You saw earlier that scientific notation always has one non-zero digit in front of the decimal point. The same convention is used for floating point numbers in binary format. But there's a neat trick: because the only non-zero value available in the binary system is <code>1</code> <em>it doesn't need to be stored</em>. Just like the <em>base</em>, it can be implicitly assumed to be present, even if it is not included in the number itself.
+    </p>
+    
+    <p>
+      This means that the significand represents 1024 possible fractions beween <code>1</code> and <code>2</code>... but it can never exactly reach <code>2</code>.
+    </p>
+      
+    
+    <ul>
+      <li>A significand of <code>0000000000</code> represents <code><em class="implicit">1</em> + 0/1024</code>, or simply 1.</li>
+      <li>A significand of <code>0000000001</code> represents <code><em class="implicit">1</em> + 1/1024</code>, or <code>1.0009765625</code> in decimal format.</li>
+      <li>A  significand of <code>1111111111</code> represents <code><em class="implicit">1</em> + 1023/1024</code>, or <code>1.9990234375</code> in decimal format.</li>
+    </ul>
+    
+    <p>
+      This means that there are gaps of just under <code>0.001</code> between each possible value that can be precisely expressed. <strong>In other words, floating point numbers can only be an approximation for most numbers.</strong> Any arithmetical operations will necessarily create rounding errors.
+    </p>
+    
+    <h4>The Range of the Exponent</h4>
+    <p>
+      And there are 5 bits for the exponent. With 5 bits, we could create a number as big as <code>11111</code>, or <code>16 + 8 + 4 + 2 + 1 = 31</code>, but:
+    </p>
+    <ul>
+      <li>The standard needs to be able to express both positive and negative exponents.</li>
+      <li>The values <code>00000</code> and <code>11111</code> are given a special meaning, which you'll discover shortly.</li>
+    </ul> 
+    <p>
+      This means that the group of 5 bits that is used for the exponent can take 30 values: from 1 (<code>00001</code>), to 30 (<code>11110</code>). The standard subtracts <code>15</code> from the number stored in the exponent, which gives a range from <code>+15</code> through zero down to <code>-14</code>. The significand can therefore be multiplied by any number from <code>2^15</code> (<code>32768</code>) to <code>2^-14</code> (<code>0.00006103515625</code>).
+    </p>
+
+    <h3>Largest and Smallest Numbers and Special Cases</h3>
+    <p>
+      The largest number that can be expressed as a 16-bit floating-point number is:<br><code class="no-break"><span class="sign">0</span> <span class="exponent">11110</span> <span class="significand">1111111111</span></code> or<br><code class="no-break"><span class="sign">+</span> <span class="exponent">2^15</span> × (1 + <span class="significand">1023/1024</span>)</code>, or <br><code class="no-break"><span class="sign">+</span> <span class="exponent">32768</span> × <span class="significand">1.9990234375</span></code>, or<br><code>65504</code>.
+    </p>
+
+    <p>
+      The largest negative number that can be expressed is:<br><code class="no-break"><span class="sign">1</span> <span class="exponent">11110</span> <span class="significand">1111111111</span></code> or<br><code class="no-break"><span class="sign">-</span> <span class="exponent">2^15</span> × (1 + <span class="significand">1023/1024</span>)</code>, or <br><code class="no-break"><span class="sign">-</span> <span class="exponent">32768</span> × <span class="significand">1.9990234375</span></code>, or<br><code>-65504</code>.
+    </p>
+    
+    <h4>Infinities and <code>NaN</code></h4>
+    <p>
+      If the exponent is <code class="exponent">11111</code>, then the number is considered to be one of three things, depending on the values of the sign bit and the significand:
+    </p>  
+    
+    <ul>
+      <li><code class="no-break"><span class="sign">0</span> <span class="exponent">11111</span> <span class="significand">0000000000</span></code>:  <code>Infinity</code></li>
+      <li><code class="no-break"><span class="sign">1</span> <span class="exponent">11111</span> <span class="significand">0000000000</span></code>: <code>-Infinity</code></li>
+      <li><code class="no-break"><span class="sign">x</span> <span class="exponent">11111</span> <span class="significand">xxxxxxxxxx</span></code>, where <code>x</code> is either <code>1</code> or <code>0</code>, and the <code>x</code>s in the significand are not all <code>0</code>: <code>NaN</code> (Not a Number)</li>
+    </ul>
+    
+    <p>
+      This is the special case for an exponent of <code>11111</code>. And it is one reason why <code>NaN === NaN</code> is always <code>false</code>.
+    </p>
+
+    <h4>Subnormal Numbers</h4>
+    <p>
+      If the exponent is  <code class="exponent">00000</code>, then it is assumed that the implicit significant bit is <code>0</code>, and not <code>1</code>. This allows the representation of even smaller fractions of <code>1</code>, including <code>0</code> itself:
+    </p>
+    
+    <p>
+      <code class="no-break"><span class="sign">0</span> <span class="exponent">00000</span> <span class="significand">0000000000</span></code> or <code>0</code>
+    </p>
+
+    
+    <p>
+      Here is how the smallest possible 16-bit fraction is expressed:
+    </p>
+    
+    <p>
+      <code class="no-break"><span class="sign">  0</span> <span class="exponent">00000</span> <span class="significand">0000000001</span></code> or<br><code class="no-break"><span class="sign">  +</span> <span class="exponent">2^-14</span> × (0 + <span class="significand">1/1024</span>)</code>, or <br><code class="no-break"><span class="sign">  +</span> <span class="exponent">0.00006103515625</span> × <span class="significand">0.0009765625</span></code>, or<br><code>≈ + 0.000000059604645</code>
+    </p>
+
+    <div class="note">
+    <h3>Sorting Numbers</h3>
+    
+    <p>This system of defining floating point numbers was explicitly designed so that floating point numbers can be sorted exactly the same way as integers... if you take into the account the existence of the <code>NaN</code> group of numbers. Check it out:</p>
+    
+    <p>
+      <code class="no-break"><span class="sign">0</span> <span class="exponent">00000</span> <span class="significand">0000000000</span></code> is <code>0</code>,<br><code class="no-break"><span class="sign">0</span> <span class="exponent">00000</span> <span class="significand">0000000001</span></code> is the smallest non-zero positive number,<br><code class="no-break"><span class="sign">0</span> <span class="exponent">01111</span> <span class="significand">0000000000</span></code> is <code>+1</code>,<br><code class="no-break"><span class="sign">0</span> <span class="exponent">10000</span> <span class="significand">0000000000</span></code> is <code>+2</code>,<br><code class="no-break"><span class="sign">0</span> <span class="exponent">11110</span> <span class="significand">1111111111</span></code> is the largest precisely expressible number (<code>+65504</code>),<br><code class="no-break"><span class="sign">0</span> <span class="exponent">11111</span> <span class="significand">0000000000</span></code> is <code>+Infinity</code> and<br><code class="no-break"><span class="sign">0</span> <span class="exponent">11111</span> <span class="significand">0000000001</span></code> and the other 1022 numbers "beyond infinity"  are <code>NaN</code>
+    </p>
+  </div>
+    
+  <h2>Advantages and Disadvantages</h2>
+  
+
+  
+  <ul>
+    <li>The range of numbers that can be expressed in floating point format (<code>-65504</code> to <code>+65504</code>) is greater than the range that can be expressed with integers (<code>-32768</code> to <code>+32768</code>).</li>
+    <li>Floating point numbers can express fractional values.</li>
+    <li>Floating point numbers can be sorted as simply as integers.</li>
+    <li>Just as with integers, there are gaps between consecutive values. Most numbers need to be rounded to the nearest expressible value.</li>
+    <li>Rounding errors will occur during arithmetical operations, and these errors will grow with the number of operations.</li>
+    <li>16-bit floating point numbers are accurate to about 3 significant (decimal) figures. Floating point numbers on 32-bit are accurate to more than 7 significant figures. 64-bit systems give you between 15 and 16 digits of precision.</li>
+  </ul>
+  
+    
+  </p>
+  
+    
+    <hr>
+    <h2 id="demo">Demonstration</h2>
+   
+     <p>So much for the theory. Let me show you this in practice.</p>
+   
+     <h1 style="text-align: center; background-color: #c96; padding: 4em 0; color: white">Work in Progress</h1>
+    
+    
+    
+    
+  </body>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const CYCLE_DELAY = 1000;
+
+      const cycleValues = Array(62)
+        .fill(0)
+        .map((_, index) => {
+          const num = 2 + Math.floor(index / 2);
+          const power = !((index % 4) % 3) ? "1000000" : "100000";
+          return { num, power };
+        });
+
+      let cycleIndex = 0;
+      let interval;
+
+      const calculate = () => {
+        const num = number.valueAsNumber;
+        const times = power.value; // string
+        const zeros = times.slice(1);
+
+        const output = `> 1 / ${num}${zeros} * ${num} * ${times}
+${(1 / (num * times)) * num * times}`;
+        calculation.innerText = output;
+      };
+
+      const showNextExample = () => {
+        cycleIndex = (cycleIndex + 1) % cycleValues.length;
+        const example = cycleValues[cycleIndex];
+        number.value = example.num;
+        power.value = example.power;
+        calculate();
+      };
+
+      const toggleCycle = (event) => {
+        if (event.target.checked) {
+          const num = number.value;
+          const pow = power.value;
+          cycleIndex = cycleValues.findIndex(
+            (data) => data.num == num && data.power === pow
+          );
+
+          number.disabled = true;
+          power.disabled = true;
+
+          interval = setInterval(showNextExample, CYCLE_DELAY);
+        } else {
+          number.disabled = false;
+          power.disabled = false;
+          clearInterval(interval);
+        }
+      };
+
+      const number = document.getElementById("number");
+      const power = document.getElementById("power");
+      const calculation = document.getElementById("calculation");
+      const cycle = document.getElementById("cycle");
+      number.onchange = power.onchange = calculate;
+      cycle.onchange = toggleCycle;
+
+      calculate();
+    })();
+  </script>
+</html>
