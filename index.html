@@ -478,9 +478,29 @@ $ node
         This system of defining floating point numbers was explicitly designed so that floating point numbers can be sorted exactly the same way as integers... if you take into the account the existence of the <code>NaN</code> group of numbers. Check it out:
       </p>
 
-      <p>
-        <code class="no-break"><span class="sign">0</span> <span class="exponent">00000</span> <span class="significand">0000000000</span></code> is <code>0</code>,<br><code class="no-break"><span class="sign">0</span> <span class="exponent">00000</span> <span class="significand">0000000001</span></code> is the smallest non-zero positive number,<br><code class="no-break"><span class="sign">0</span> <span class="exponent">01111</span> <span class="significand">0000000000</span></code> is <code>+1</code>,<br><code class="no-break"><span class="sign">0</span> <span class="exponent">10000</span> <span class="significand">0000000000</span></code> is <code>+2</code>,<br><code class="no-break"><span class="sign">0</span> <span class="exponent">11110</span> <span class="significand">1111111111</span></code> is the largest precisely expressible number (<code>+65504</code>),<br><code class="no-break"><span class="sign">0</span> <span class="exponent">11111</span> <span class="significand">0000000000</span></code> is <code>+Infinity</code> and<br><code class="no-break"><span class="sign">0</span> <span class="exponent">11111</span> <span class="significand">0000000001</span></code> and the other 1022 numbers "beyond infinity"  are <code>NaN</code>
-      </p>
+      <ul>
+        <li>
+          <code class="no-break"><span class="sign">0</span> <span class="exponent">00000</span> <span class="significand">0000000000</span></code> is <code>0</code>
+        </li>
+        <li>
+          <code class="no-break"><span class="sign">0</span> <span class="exponent">00000</span> <span class="significand">0000000001</span></code> is the smallest non-zero positive number
+        </li>
+        <li>
+          <code class="no-break"><span class="sign">0</span> <span class="exponent">01111</span> <span class="significand">0000000000</span></code> is <code>+1</code>
+        </li>
+        <li>
+          <code class="no-break"><span class="sign">0</span> <span class="exponent">10000</span> <span class="significand">0000000000</span></code> is <code>+2</code>
+        </li>
+        <li>
+          <code class="no-break"><span class="sign">0</span> <span class="exponent">11110</span> <span class="significand">1111111111</span></code> is the largest precisely expressible number (<code>+65504</code>)
+        </li>
+        <li>
+          <code class="no-break"><span class="sign">0</span> <span class="exponent">11111</span> <span class="significand">0000000000</span></code> is <code>+Infinity</code>
+        </li>
+        <li>
+          <code class="no-break"><span class="sign">0</span> <span class="exponent">11111</span> <span class="significand">0000000001</span></code> and the other 1022 numbers "beyond infinity"  are <code>NaN</code>
+        </li>
+      </ul>
     </div>
 
     <h2>Advantages and Disadvantages</h2>
