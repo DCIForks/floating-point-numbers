@@ -265,9 +265,8 @@ $ node
     
     <div class="note">
       <p>
-        Node doesn't always behave perfectly with such huge integers. Try this in a Terminal window:
+        Node doesn't seem to behave perfectly with such huge integers. Try this in a Terminal window:
       </p>
-      
       <pre>
 $ node
 > 9223372036854775808
@@ -282,10 +281,10 @@ $ node
 > Math.pow(2, 63) - 513
 9223372036854775000
       </pre>
+
       <p>
         How many significant figures does Node show correctly? Fifteen. And then it rounds the remaining 4 figures up. The final <code>...75808</code> becomes <code>...76000</code>.
       </p>
-      
       <p>
         As you will see shortly, with <em>floating-point numbers</em>, you can't trust the 16th significant figure. It seems that Node applies chooses to round its <em>display</em> to 16 significant figures, even if it stores the <em>value</em> of such big integers correctly.
       </p>
@@ -293,31 +292,30 @@ $ node
       <p>
         You can try this in a Node script:
       </p>
-      
+
       <pre>let bigInt = Math.pow(2, 63)
-  console.log("2^63, as _displayed_ by Node:", bigInt)
-  console.log("Actual value:                 9223372036854775808")
-  while ((bigInt /= 2) > 36028797018963970) {
-    console.log(bigInt)
-  }
-  
-  console.log("")
-  console.log("2^55, by halving:  ", bigInt);
-  console.log("2^55, actual value: 36028797018963968");
-  bigInt /= 2
-  console.log("")
-  console.log("2^54, by halving:  ", bigInt);
-  console.log("2^54, actual value:", Math.pow(2, 54));
-  console.log("")
-  
-  while (1 &lt;= (bigInt /= 2)) {
-    console.log(bigInt)
-  }</pre>
+console.log("2^63, as _displayed_ by Node:", bigInt)
+console.log("Actual value:                 9223372036854775808")
+while ((bigInt /= 2) > 36028797018963970) {
+  console.log(bigInt)
+}
+
+console.log("")
+console.log("2^55, by halving:  ", bigInt);
+console.log("2^55, actual value: 36028797018963968");
+bigInt /= 2
+console.log("")
+console.log("2^54, by halving:  ", bigInt);
+console.log("2^54, actual value:", Math.pow(2, 54));
+console.log("")
+
+while (1 &lt;= (bigInt /= 2)) {
+  console.log(bigInt)
+}</pre>
      
      <p>
-       The output should look something like this:
-     </p>
-      
+      The output should look something like this:
+    </p>
      <pre>2^63, as _displayed_ by Node: 9223372036854776000
 Actual value:                 9223372036854775808
 4611686018427388000
@@ -345,7 +343,34 @@ Actual value:                 9223372036854775808
       <p>
         As you can see, even if the biggest values <em>as displayed</em> end in zeroes, Node calculates the correct value each time it halves the number.
       </p>
+
+      <p>
+        But Node isn't always that accurate with big integers. Try this in the Terminal:
+      </p>
       
+      <pre>$ node
+Welcome to Node.js v16.19.1.
+> bigInt = 9007199254740992 // Math.pow(2, 53)
+9007199254740992
+> bigInt === bigInt - 1
+false
+> bigInt === bigInt + 1
+true
+> // What?!
+
+> bigInt - 1 // as you would expect:
+9007199254740991
+> bigInt + 1 // against all logic:
+9007199254740992
+
+> (bigInt + 1) - bigInt
+0
+> (bigInt + 2) - bigInt
+2</pre>
+         
+      <p>
+        In Node.js version 16.19.1, it seems that numbers above 9&nbsp;007&nbsp;199&nbsp;254&nbsp;740&nbsp;992 can't be completely trusted. But maybe, with your version of Node, you'll get different results.
+      </p>  
     </div>
     
     <p>
