@@ -263,7 +263,20 @@ $ node
       To represent integers, one bit is used to indicate whether the number is positive (the first bit will be <code>0</code>) or negative (the first bit will be <code>1</code>). This leaves 63 bits to define the number. In other words, with 64 bits, a computer can represent integers from <code>+9223372036854775807</code> (2^63 - 1) through zero to <code>-9223372036854775807</code>.
     </p>
     
+    <p>
+      Note that zero is a special case. For technical reasons, it has two representations: a <code>1</code> followed by 63 <code>0</code>s (in other words, <code>-0</code>) or <code>0</code> followed by another 63 <code>0</code>s (or <code>+0</code>).
+    </p>
+
+    <p>
+      That's a big number, <code>2<sup>63</sup> - 1</code>: 9 223 372 036 854 775 807. Almost 10 billion billions. Bigger than the value of the entire production of goods by everyone in for the whole world in one year, measured in US <em>cents</em>. More than twice the distance from here to the closest star, Proxima Centauri, measured in <em>centimetres</em>.
+    </p>
+
+    <p>
+      Numbers outside this range will be treated as <code>±Infinity</code>. You'll see how shortly.
+    </p>
+    
     <div class="note">
+      <h3>An aside about big integers</h3>
       <p>
         Node doesn't seem to behave perfectly with such huge integers. Try this in a Terminal window:
       </p>
@@ -283,7 +296,7 @@ $ node
       </pre>
 
       <p>
-        How many significant figures does Node show correctly? Fifteen. And then it rounds the remaining 4 figures up. The final <code>...75808</code> becomes <code>...76000</code>.
+        How many significant figures does Node show correctly? Fifteen. And then it rounds the remaining 4 figures up. The final <code>…75808</code> becomes <code>…76000</code>.
       </p>
       <p>
         As you will see shortly, with <em>floating-point numbers</em>, you can't trust the 16th significant figure. It seems that Node applies chooses to round its <em>display</em> to 16 significant figures, even if it stores the <em>value</em> of such big integers correctly.
@@ -296,6 +309,7 @@ $ node
       <pre>let bigInt = Math.pow(2, 63)
 console.log("2^63, as _displayed_ by Node:", bigInt)
 console.log("Actual value:                 9223372036854775808")
+console.log("\nThe following values are also approximate:\n")
 while ((bigInt /= 2) > 36028797018963970) {
   console.log(bigInt)
 }
@@ -304,7 +318,7 @@ console.log("")
 console.log("2^55, by halving:  ", bigInt);
 console.log("2^55, actual value: 36028797018963968");
 bigInt /= 2
-console.log("")
+console.log("\nThe following values are accurate:\n")
 console.log("2^54, by halving:  ", bigInt);
 console.log("2^54, actual value:", Math.pow(2, 54));
 console.log("")
@@ -314,10 +328,13 @@ while (1 &lt;= (bigInt /= 2)) {
 }</pre>
      
      <p>
-      When you execute this script, the output should look something like this:
+      The output should look something like this:
     </p>
      <pre>2^63, as _displayed_ by Node: 9223372036854776000
 Actual value:                 9223372036854775808
+
+The following values are also approximate:
+
 4611686018427388000
 2305843009213694000
 1152921504606847000
@@ -328,6 +345,8 @@ Actual value:                 9223372036854775808
 
 2^55, by halving:   36028797018963970
 2^55, actual value: 36028797018963968
+
+The following values are accurate:
 
 2^54, by halving:   18014398509481984
 2^54, actual value: 18014398509481984
@@ -341,8 +360,7 @@ Actual value:                 9223372036854775808
 1</pre>
       
       <p>
-        As you can see, even if the biggest values <em>as displayed</em> end in zeroes, Node calculates the correct value
-        each time it halves the number. At least, for exact powers of 2.
+        As you can see, even if the biggest values <em>as displayed</em> end in zeroes, Node calculates the correct value each time it halves the number.
       </p>
 
       <p>
@@ -370,21 +388,9 @@ true
 2</pre>
          
       <p>
-        In Node.js version 16.19.1, it seems that numbers above 9&nbsp;007&nbsp;199&nbsp;254&nbsp;740&nbsp;991 can't be completely trusted. But maybe, with your version of Node, you'll get different results.
+        In Node.js version 16.19.1, it seems that numbers above 9&nbsp;007&nbsp;199&nbsp;254&nbsp;740&nbsp;992 can't be completely trusted. But maybe, with your version of Node, you'll get different results.
       </p>  
     </div>
-    
-    <p>
-      Note that zero is a special case. For technical reasons, it has two representations: a <code>1</code> followed by 63 <code>0</code>s (in other words, <code>-0</code>) or <code>0</code> followed by another 63 <code>0</code>s (or <code>+0</code>).
-    </p>
-
-    <p>
-      That's a big number, <code>2<sup>63</sup></code>: 9,223,372,036,854,775,999. Almost 10 billion billions. Bigger than the value of the entire production of goods by everyone in for the whole world in one year, measured in US <em>cents</em>. More than twice the distance from here to the closest star, Proxima Centauri, measured in <em>centimetres</em>.
-    </p>
-
-    <p>
-      Numbers outside this range will be treated as <code>±Infinity</code>. You'll see how shortly.
-    </p>
 
     <h2>Numbers With a Decimal Fraction</h2>
 
