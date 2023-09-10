@@ -109,8 +109,7 @@
     <pre>
 $ node
 > 1 / 300000 * 3 * 100000
-0.9999999999999999</pre
-    >
+0.9999999999999999</pre>
 
     <p>Why is the output of this calculation not exactly 1?</p>
 
@@ -261,7 +260,96 @@ $ node
     </p>
 
     <p>
-      To represent integers, one bit is used to indicate whether the number is positive (the first bit will be <code>0</code>) or negative (the first bit will be <code>1</code>). This leaves 63 bits to define the number. In other words, with 64 bits, a computer can represent integers from <code>+9223372036854775999</code> through zero to <code>-9223372036854775999</code>. Note that zero is a special case. For technical reasons, it has two representations: a <code>1</code> followed by 63 <code>0</code>s (in other words, <code>-0</code>) or <code>0</code> followed by another 63 <code>0</code>s (or <code>+0</code>).
+      To represent integers, one bit is used to indicate whether the number is positive (the first bit will be <code>0</code>) or negative (the first bit will be <code>1</code>). This leaves 63 bits to define the number. In other words, with 64 bits, a computer can represent integers from <code>+9223372036854775807</code> (2^63 - 1) through zero to <code>-9223372036854775807</code>.
+    </p>
+    
+    <div class="note">
+      <p>
+        Node doesn't always behave perfectly with such huge integers. Try this in a Terminal window:
+      </p>
+      
+      <pre>
+$ node
+> 9223372036854775808
+9223372036854776000
+
+> Math.pow(2, 63)
+9223372036854776000
+
+> Math.pow(2, 63) - 512
+9223372036854776000
+
+> Math.pow(2, 63) - 513
+9223372036854775000
+      </pre>
+      <p>
+        How many significant figures does Node show correctly? Fifteen. And then it rounds the remaining 4 figures up. The final <code>...75808</code> becomes <code>...76000</code>.
+      </p>
+      
+      <p>
+        As you will see shortly, with <em>floating-point numbers</em>, you can't trust the 16th significant figure. It seems that Node applies chooses to round its <em>display</em> to 16 significant figures, even if it stores the <em>value</em> of such big integers correctly.
+      </p>
+
+      <p>
+        You can try this in a Node script:
+      </p>
+      
+      <pre>let bigInt = Math.pow(2, 63)
+  console.log("2^63, as _displayed_ by Node:", bigInt)
+  console.log("Actual value:                 9223372036854775808")
+  while ((bigInt /= 2) > 36028797018963970) {
+    console.log(bigInt)
+  }
+  
+  console.log("")
+  console.log("2^55, by halving:  ", bigInt);
+  console.log("2^55, actual value: 36028797018963968");
+  bigInt /= 2
+  console.log("")
+  console.log("2^54, by halving:  ", bigInt);
+  console.log("2^54, actual value:", Math.pow(2, 54));
+  console.log("")
+  
+  while (1 &lt;= (bigInt /= 2)) {
+    console.log(bigInt)
+  }</pre>
+     
+     <p>
+       The output should look something like this:
+     </p>
+      
+     <pre>2^63, as _displayed_ by Node: 9223372036854776000
+Actual value:                 9223372036854775808
+4611686018427388000
+2305843009213694000
+1152921504606847000
+576460752303423500
+288230376151711740
+144115188075855870
+72057594037927940
+
+2^55, by halving:   36028797018963970
+2^55, actual value: 36028797018963968
+
+2^54, by halving:   18014398509481984
+2^54, actual value: 18014398509481984
+
+9007199254740992
+4503599627370496
+...
+8
+4
+2
+1</pre>
+      
+      <p>
+        As you can see, even if the biggest values <em>as displayed</em> end in zeroes, Node calculates the correct value each time it halves the number.
+      </p>
+      
+    </div>
+    
+    <p>
+      Note that zero is a special case. For technical reasons, it has two representations: a <code>1</code> followed by 63 <code>0</code>s (in other words, <code>-0</code>) or <code>0</code> followed by another 63 <code>0</code>s (or <code>+0</code>).
     </p>
 
     <p>
