@@ -314,7 +314,7 @@ while (1 &lt;= (bigInt /= 2)) {
 }</pre>
      
      <p>
-      The output should look something like this:
+      When you execute this script, the output should look something like this:
     </p>
      <pre>2^63, as _displayed_ by Node: 9223372036854776000
 Actual value:                 9223372036854775808
@@ -341,7 +341,8 @@ Actual value:                 9223372036854775808
 1</pre>
       
       <p>
-        As you can see, even if the biggest values <em>as displayed</em> end in zeroes, Node calculates the correct value each time it halves the number.
+        As you can see, even if the biggest values <em>as displayed</em> end in zeroes, Node calculates the correct value
+        each time it halves the number. At least, for exact powers of 2.
       </p>
 
       <p>
@@ -369,7 +370,7 @@ true
 2</pre>
          
       <p>
-        In Node.js version 16.19.1, it seems that numbers above 9&nbsp;007&nbsp;199&nbsp;254&nbsp;740&nbsp;992 can't be completely trusted. But maybe, with your version of Node, you'll get different results.
+        In Node.js version 16.19.1, it seems that numbers above 9&nbsp;007&nbsp;199&nbsp;254&nbsp;740&nbsp;991 can't be completely trusted. But maybe, with your version of Node, you'll get different results.
       </p>  
     </div>
     
